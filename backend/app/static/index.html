@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi SRS Kinetics Studio</title>
+    <link rel="stylesheet" href="/static/plot_sys_style_copied.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+</head>
+
+<body data-theme="dark">
+    <div class="app-shell">
+        <div class="ambient-glow ambient-glow-left"></div>
+        <div class="ambient-glow ambient-glow-right"></div>
+
+        <div class="app-frame">
+            <!-- SIDEBAR 1: Triage / File Setup -->
+            <aside class="sidebar panel-surface panel-elevated">
+                <div class="brand-lockup">
+                    <p class="eyebrow">Multi-curve Processing Workflow</p>
+                    <h2>Multi SRS <span>Studio</span></h2>
+                    <p class="brand-copy">Select Folder -> Convert multiple .srs -> Area Integration -> Multi-Kinetics
+                        Fitting</p>
+                </div>
+
+                <div class="workspace-card" style="padding: 14px 16px;">
+                    <div class="workspace-card-label">Run Persistence</div>
+                    <label style="display: flex; align-items: center; gap: 10px; font-size: 0.92rem; font-weight: 700; color: var(--foreground-strong); cursor: pointer;">
+                        <input id="keepRecordCheckbox" type="checkbox" style="width: 16px; height: 16px; margin: 0;">
+                        <span>Keep Record</span>
+                    </label>
+                    <p class="checkbox-help" style="margin: 10px 0 0 0; font-size: 0.8rem;">
+                        When enabled, keep this run's converted files, fit images, and parameter snapshots in
+                        <code>backend/data/runs/</code>.
+                    </p>
+                </div>
+
+                <div class="sidebar-sections">
+                    <!-- Section 1: Extraction -->
+                    <section class="sidebar-section" id="section-extract">
+                        <button class="section-header" type="button" aria-expanded="true">
+                            <span class="arrow">▼</span>
+                            <span class="section-heading-group">
+                                <span class="section-kicker">Step 1</span>
+                                <span class="section-title">Data & Settings</span>
+                            </span>
+                        </button>
+                        <div class="section-content">
+                            <div class="folder-selection">
+                                <input type="text" id="folderPathInput" class="field-control folder-path-input"
+                                    placeholder="Paste a local folder path, then click Apply." title="">
+                                <div class="folder-actions">
+                                    <button id="applyFolderBtn" class="secondary-btn" type="button">Apply</button>
+                                </div>
+                            </div>
+                            <p id="folderMsg" class="section-note">Paste a local folder path, then click Apply to
+                                refresh the working file list.</p>
+
+                            <!-- File List Display -->
+                            <div id="fileListContainer" class="list-group" aria-live="polite"
+                                style="margin-bottom: 24px;">
+                                <div class="loading">No folder applied yet.</div>
+                            </div>
+
+                            <p class="section-note" style="margin-bottom: 8px;">Extraction parameters:</p>
+
+                            <div class="form-group" style="margin-bottom: 12px;">
+                                <label>Mode</label>
+                                <select id="mode" class="field-control">
+                                    <option value="realtime">realtime</option>
+                                    <option value="fast">fast</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 12px;">
+                                <label>Default Start WN</label>
+                                <input id="defaultStart" type="number" value="1150" step="1" class="field-control" />
+                            </div>
+                            <div class="form-group" style="margin-bottom: 12px;">
+                                <label>Default End WN</label>
+                                <input id="defaultEnd" type="number" value="4000" step="1" class="field-control" />
+                            </div>
+
+                            <button id="extractAllBtn" class="primary-btn save-defaults-btn"
+                                style="width: 100%; margin-top: 12px;" disabled>
+                                <span class="icon">⚙️</span>
+                                <span>Extract All (Placeholder)</span>
+                            </button>
+                        </div>
+                    </section>
+
+                    <!-- The remaining sections are kept as layout placeholders for future multi-curve steps -->
+                    <section class="sidebar-section collapsed" id="section-integration">
+                        <button class="section-header" type="button" aria-expanded="false">
+                            <span class="arrow">▶</span>
+                            <span class="section-heading-group">
+                                <span class="section-kicker">Step 2</span>
+                                <span class="section-title">Integration</span>
+                            </span>
+                        </button>
+                        <div class="section-content">
+                            <p class="section-note">Set integration window on the waterfall (drag the dashed lines) or
+                                enter values below.</p>
+                            <div class="form-group" style="margin-bottom: 12px;">
+                                <label>Start WN</label>
+                                <input id="intStart" type="number" value="1150" step="1" class="field-control" />
+                            </div>
+                            <div class="form-group" style="margin-bottom: 12px;">
+                                <label>End WN</label>
+                                <input id="intEnd" type="number" value="4000" step="1" class="field-control" />
+                            </div>
+                            <div class="form-group" style="margin-bottom: 12px;">
+                                <label>Baseline Mode</label>
+                                <select id="baselineMode" class="field-control">
+                                    <option value="none">None</option>
+                                    <option value="linear">Linear</option>
+                                </select>
+                            </div>
+                            <button id="integrateBtn" class="secondary-btn" style="width: 100%; margin-top: 4px;"
+                                disabled>
+                                <span class="icon">∫</span>
+                                <span>Integrate</span>
+                            </button>
+                        </div>
+                    </section>
+
+                    <!-- Step 3: Fitting -->
+                    <section class="sidebar-section collapsed" id="section-fitting">
+                        <button class="section-header" type="button" aria-expanded="false">
+                            <span class="arrow">▶</span>
+                            <span class="section-heading-group">
+                                <span class="section-kicker">Step 3</span>
+                                <span class="section-title">Fitting</span>
+                            </span>
+                        </button>
+                        <div class="section-content">
+                            <p class="section-note">Set fit time range per file. Drag the dashed lines on each kinetics
+                                chart or enter values here.</p>
+                            <div id="fitting-subsections"></div>
+                        </div>
+                    </section>
+                </div>
+            </aside>
+
+            <!-- MAIN CONFIG PANEL: Plots -->
+            <main class="config-panel panel-surface" style="overflow-y: auto;">
+                <header class="panel-header config-header">
+                    <div class="panel-title-block">
+                        <p class="eyebrow">Visualization</p>
+                        <h1>Multi-Curve Plotting</h1>
+                        <p class="panel-copy" id="vizStatusMsg">Extract files to begin.</p>
+                    </div>
+                </header>
+                <div class="panel-content" style="padding-bottom: 40px;">
+
+                    <!-- Waterfall Section (card) -->
+                    <div
+                        style="border: 1px solid var(--border-subtle); border-radius: 10px; padding: 16px 20px; margin-bottom: 24px; background: var(--bg-surface-elevated);">
+                        <div
+                            style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                            <h2 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin: 0;">SRS
+                                Waterfall</h2>
+                            <div
+                                style="display: flex; align-items: center; gap: 12px; font-size: 0.78rem; color: var(--text-secondary);">
+                                <label>Gap
+                                    <input type="number" id="waterfallGap" value="0" step="any" class="field-control"
+                                        style="width: 72px; padding: 3px 6px; font-size: 0.78rem; margin-left: 4px;" />
+                                </label>
+                                <label>Max Lines
+                                    <input type="number" id="waterfallMaxLines" value="15" min="1" max="200" step="1"
+                                        class="field-control"
+                                        style="width: 52px; padding: 3px 6px; font-size: 0.78rem; margin-left: 4px;" />
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- File radio selector (compact inline tags) -->
+                        <div id="fileRadioGroup" style="display: none; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;">
+                        </div>
+
+                        <!-- Waterfall plot -->
+                        <div id="spectraPlot" style="width: 100%; height: 400px;"></div>
+                    </div>
+
+                    <!-- Integration / Kinetics Section (card) -->
+                    <div
+                        style="border: 1px solid var(--border-subtle); border-radius: 10px; padding: 16px 20px; background: var(--bg-surface-elevated);">
+                        <h2 style="font-size: 1rem; font-weight: 700; color: var(--text-primary); margin: 0 0 10px 0;">
+                            Area-Time Kinetics</h2>
+                        <!-- Kinetics file radio selector -->
+                        <div id="kineticsRadioGroup"
+                            style="display: none; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;">
+                        </div>
+                        <div id="kineticsPlot" style="width: 100%; height: 360px;"></div>
+                    </div>
+
+                </div>
+            </main>
+
+            <aside class="preview-panel panel-surface panel-elevated">
+                <header class="panel-header preview-header">
+                    <div class="preview-header-copy">
+                        <p class="eyebrow">Fitting Results</p>
+                        <h3>Global Fit Review</h3>
+                        <p class="panel-copy" id="fitSummaryMsg">Set fit ranges in Step 3, then run fitting for all selected files.</p>
+                    </div>
+                    <button id="runFitsBtn" class="primary-btn" type="button" disabled style="min-width: 138px;">
+                        <span class="icon">ƒ</span>
+                        <span>Run All Fits</span>
+                    </button>
+                </header>
+
+                <div class="panel-content" style="padding-bottom: 10px;">
+                    <div class="result-gallery">
+                        <div class="result-gallery-header">
+                            <h4>Peak Area-Time Overlay</h4>
+                            <span class="result-count" id="fitStatusBadge">Not fitted</span>
+                        </div>
+                        <div style="display: flex; justify-content: center;">
+                            <div style="width: fit-content; max-width: 100%;">
+                                <img id="fitOverlayImage" alt="Peak area overlay" style="width: min(100%, 10cm); height: auto; display: none; margin: 0 auto;" />
+                                <div id="fitOverlayPlaceholder" class="result-empty" style="width: min(100%, 10cm); min-height: 8cm; display: flex; align-items: center; justify-content: center; text-align: center; margin: 0 auto;">Run fitting to generate the overlay image.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="result-gallery">
+                        <div class="result-gallery-header">
+                            <h4>Cropped Normalized Fits</h4>
+                            <span class="result-count" id="fitNormalizedMeta">No fit data</span>
+                        </div>
+                        <div style="display: flex; justify-content: center;">
+                            <div style="width: fit-content; max-width: 100%;">
+                                <img id="fitNormalizedImage" alt="Normalized fitting segments" style="width: min(100%, 10cm); height: auto; display: none; margin: 0 auto;" />
+                                <div id="fitNormalizedPlaceholder" class="result-empty" style="width: min(100%, 10cm); min-height: 8cm; display: flex; align-items: center; justify-content: center; text-align: center; margin: 0 auto;">Run fitting to generate the normalized image.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="result-gallery">
+                        <div class="result-gallery-header">
+                            <h4>Fit Parameters</h4>
+                            <span class="result-count" id="fitResultCount">0 files</span>
+                        </div>
+                        <div id="fitResultCards" class="result-list">
+                            <div class="result-empty">Run fitting to populate parameter cards.</div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,216 @@
+INFO:     Will watch for changes in these directories: ['/Users/wentao/multi_srs_kinetics_webapp/backend']
+INFO:     Uvicorn running on http://127.0.0.1:8003 (Press CTRL+C to quit)
+INFO:     Started reloader process [16131] using StatReload
+INFO:     Started server process [16185]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:62981 - "POST /api/list_folder HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55015 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55015 - "GET /static/plot_sys_style_copied.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55016 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55016 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:55117 - "POST /api/list_folder HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55369 - "POST /api/list_folder HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55408 - "POST /api/list_folder HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55408 - "POST /api/list_folder HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55455 - "POST /api/list_folder HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55455 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55474 - "POST /api/list_folder HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55536 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55536 - "POST /api/list_folder HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56251 - "POST /api/list_folder HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [16185]
+INFO:     Started server process [42165]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:57617 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57617 - "GET /static/plot_sys_style_copied.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:57618 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57652 - "POST /api/list_folder HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58685 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58685 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58686 - "POST /api/list_folder HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58746 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58746 - "GET /static/app.js HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:58746 - "POST /api/list_folder HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56036 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56037 - "GET /static/plot_sys_style_copied.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:56036 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56150 - "POST /api/list_folder HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56836 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56837 - "POST /api/list_folder HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56927 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56927 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56928 - "GET /static/plot_sys_style_copied.css HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56928 - "GET /favicon.ico HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:56928 - "POST /api/list_folder HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58950 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58950 - "GET /static/app.js HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:58951 - "POST /api/list_folder HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61004 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61004 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62726 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62726 - "GET /static/plot_sys_style_copied.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:62727 - "GET /static/app.js HTTP/1.1" 304 Not Modified
+WARNING:  StatReload detected changes in 'app/main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [42165]
+INFO:     Started server process [39721]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:54012 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54061 - "POST /api/extract_all HTTP/1.1" 400 Bad Request
+INFO:     127.0.0.1:54143 - "POST /api/extract_all HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:54222 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54222 - "GET /static/plot_sys_style_copied.css HTTP/1.1" 304 Not Modified
+INFO:     127.0.0.1:54224 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54459 - "POST /api/list_folder HTTP/1.1" 200 OK
+/Users/wentao/multi_srs_kinetics_webapp/backend/.venv/lib/python3.9/site-packages/numpy/_core/_methods.py:188: RuntimeWarning: overflow encountered in multiply
+  x = um.multiply(x, x, out=x)
+文件大小: 8,310,524 bytes
+运行模式: realtime
+✅ 解析时间/电位 342 点，范围: 0.4530 ~ 155.2130
+光谱矩阵形状: (341, 5913) （行=帧，列=波数点）
+📄 已保存时间分辨光谱: /Users/wentao/multi_srs_kinetics_webapp/backend/data/runs/ovaf8gk1/s1e1.txt
+背景起点: 3180 ；长度 5913
+📄 已保存背景文件: /Users/wentao/multi_srs_kinetics_webapp/backend/data/runs/ovaf8gk1/s1e1_bg.txt
+文件大小: 8,310,524 bytes
+运行模式: realtime
+✅ 解析时间/电位 342 点，范围: 0.4530 ~ 155.2130
+光谱矩阵形状: (341, 5913) （行=帧，列=波数点）
+📄 已保存时间分辨光谱: /Users/wentao/multi_srs_kinetics_webapp/backend/data/runs/ovaf8gk1/s1e1.txt
+背景起点: 3180 ；长度 5913
+📄 已保存背景文件: /Users/wentao/multi_srs_kinetics_webapp/backend/data/runs/ovaf8gk1/s1e1_bg.txt
+文件大小: 8,310,524 bytes
+运行模式: realtime
+✅ 解析时间/电位 342 点，范围: 0.4530 ~ 155.2130
+光谱矩阵形状: (341, 5913) （行=帧，列=波数点）
+📄 已保存时间分辨光谱: /Users/wentao/multi_srs_kinetics_webapp/backend/data/runs/ovaf8gk1/s1e12.txt
+背景起点: 3180 ；长度 5913
+📄 已保存背景文件: /Users/wentao/multi_srs_kinetics_webapp/backend/data/runs/ovaf8gk1/s1e12_bg.txt
+INFO:     127.0.0.1:54470 - "POST /api/extract_all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54470 - "POST /api/get_dataset HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54488 - "POST /api/get_dataset HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54488 - "POST /api/get_dataset HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54491 - "POST /api/get_dataset HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54491 - "POST /api/get_dataset HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55308 - "POST /api/cleanup HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55309 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55309 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55351 - "POST /api/list_folder HTTP/1.1" 200 OK
+文件大小: 8,310,524 bytes
+运行模式: realtime
+✅ 解析时间/电位 342 点，范围: 0.4530 ~ 155.2130
+光谱矩阵形状: (341, 5913) （行=帧，列=波数点）
+📄 已保存时间分辨光谱: /Users/wentao/multi_srs_kinetics_webapp/backend/data/runs/bgswf5kd/s1e1.txt
+背景起点: 3180 ；长度 5913
+📄 已保存背景文件: /Users/wentao/multi_srs_kinetics_webapp/backend/data/runs/bgswf5kd/s1e1_bg.txt
+文件大小: 8,310,524 bytes
+运行模式: realtime
+✅ 解析时间/电位 342 点，范围: 0.4530 ~ 155.2130
+光谱矩阵形状: (341, 5913) （行=帧，列=波数点）
+📄 已保存时间分辨光谱: /Users/wentao/multi_srs_kinetics_webapp/backend/data/runs/bgswf5kd/s1e1.txt
+背景起点: 3180 ；长度 5913
+📄 已保存背景文件: /Users/wentao/multi_srs_kinetics_webapp/backend/data/runs/bgswf5kd/s1e1_bg.txt
+文件大小: 8,310,524 bytes
+运行模式: realtime
+✅ 解析时间/电位 342 点，范围: 0.4530 ~ 155.2130
+光谱矩阵形状: (341, 5913) （行=帧，列=波数点）
+📄 已保存时间分辨光谱: /Users/wentao/multi_srs_kinetics_webapp/backend/data/runs/bgswf5kd/s1e12.txt
+背景起点: 3180 ；长度 5913
+📄 已保存背景文件: /Users/wentao/multi_srs_kinetics_webapp/backend/data/runs/bgswf5kd/s1e12_bg.txt
+INFO:     127.0.0.1:55351 - "POST /api/extract_all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55351 - "POST /api/get_dataset HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55351 - "POST /api/get_dataset HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55351 - "POST /api/get_dataset HTTP/1.1" 200 OK
+WARNING:  StatReload detected changes in 'app/main.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [39721]
+INFO:     Started server process [49449]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:57329 - "POST /api/integrate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57467 - "POST /api/cleanup HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57468 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57468 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57514 - "POST /api/list_folder HTTP/1.1" 200 OK
+/Users/wentao/multi_srs_kinetics_webapp/backend/.venv/lib/python3.9/site-packages/numpy/_core/_methods.py:188: RuntimeWarning: overflow encountered in multiply
+  x = um.multiply(x, x, out=x)
+文件大小: 8,310,524 bytes
+运行模式: realtime
+✅ 解析时间/电位 342 点，范围: 0.4530 ~ 155.2130
+光谱矩阵形状: (341, 5913) （行=帧，列=波数点）
+📄 已保存时间分辨光谱: /Users/wentao/multi_srs_kinetics_webapp/backend/data/runs/ug227kkd/s1e1.txt
+背景起点: 3180 ；长度 5913
+📄 已保存背景文件: /Users/wentao/multi_srs_kinetics_webapp/backend/data/runs/ug227kkd/s1e1_bg.txt
+文件大小: 8,310,524 bytes
+运行模式: realtime
+✅ 解析时间/电位 342 点，范围: 0.4530 ~ 155.2130
+光谱矩阵形状: (341, 5913) （行=帧，列=波数点）
+📄 已保存时间分辨光谱: /Users/wentao/multi_srs_kinetics_webapp/backend/data/runs/ug227kkd/s1e1.txt
+背景起点: 3180 ；长度 5913
+📄 已保存背景文件: /Users/wentao/multi_srs_kinetics_webapp/backend/data/runs/ug227kkd/s1e1_bg.txt
+文件大小: 8,310,524 bytes
+运行模式: realtime
+✅ 解析时间/电位 342 点，范围: 0.4530 ~ 155.2130
+光谱矩阵形状: (341, 5913) （行=帧，列=波数点）
+📄 已保存时间分辨光谱: /Users/wentao/multi_srs_kinetics_webapp/backend/data/runs/ug227kkd/s1e12.txt
+背景起点: 3180 ；长度 5913
+📄 已保存背景文件: /Users/wentao/multi_srs_kinetics_webapp/backend/data/runs/ug227kkd/s1e12_bg.txt
+INFO:     127.0.0.1:57514 - "POST /api/extract_all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57514 - "POST /api/get_dataset HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57514 - "POST /api/integrate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57545 - "POST /api/integrate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57545 - "POST /api/integrate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57570 - "POST /api/integrate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57586 - "POST /api/integrate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57586 - "POST /api/integrate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58141 - "POST /api/get_dataset HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58141 - "POST /api/integrate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59359 - "POST /api/cleanup HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59360 - "GET / HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59360 - "GET /static/app.js HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59384 - "POST /api/list_folder HTTP/1.1" 200 OK
+文件大小: 8,310,524 bytes
+运行模式: realtime
+✅ 解析时间/电位 342 点，范围: 0.4530 ~ 155.2130
+光谱矩阵形状: (341, 5913) （行=帧，列=波数点）
+📄 已保存时间分辨光谱: /Users/wentao/multi_srs_kinetics_webapp/backend/data/runs/zh7nhb3h/s1e1.txt
+背景起点: 3180 ；长度 5913
+📄 已保存背景文件: /Users/wentao/multi_srs_kinetics_webapp/backend/data/runs/zh7nhb3h/s1e1_bg.txt
+文件大小: 8,310,524 bytes
+运行模式: realtime
+✅ 解析时间/电位 342 点，范围: 0.4530 ~ 155.2130
+光谱矩阵形状: (341, 5913) （行=帧，列=波数点）
+📄 已保存时间分辨光谱: /Users/wentao/multi_srs_kinetics_webapp/backend/data/runs/zh7nhb3h/s1e1.txt
+背景起点: 3180 ；长度 5913
+📄 已保存背景文件: /Users/wentao/multi_srs_kinetics_webapp/backend/data/runs/zh7nhb3h/s1e1_bg.txt
+文件大小: 8,310,524 bytes
+运行模式: realtime
+✅ 解析时间/电位 342 点，范围: 0.4530 ~ 155.2130
+光谱矩阵形状: (341, 5913) （行=帧，列=波数点）
+📄 已保存时间分辨光谱: /Users/wentao/multi_srs_kinetics_webapp/backend/data/runs/zh7nhb3h/s1e12.txt
+背景起点: 3180 ；长度 5913
+📄 已保存背景文件: /Users/wentao/multi_srs_kinetics_webapp/backend/data/runs/zh7nhb3h/s1e12_bg.txt
+INFO:     127.0.0.1:59384 - "POST /api/extract_all HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59384 - "POST /api/get_dataset HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59384 - "POST /api/get_dataset HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59384 - "POST /api/integrate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59384 - "POST /api/integrate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59384 - "POST /api/integrate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59384 - "POST /api/integrate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59384 - "POST /api/get_dataset HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59384 - "POST /api/get_dataset HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59384 - "POST /api/get_dataset HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59384 - "POST /api/get_dataset HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59384 - "POST /api/integrate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59384 - "POST /api/get_dataset HTTP/1.1" 200 OK
+INFO:     127.0.0.1:59384 - "POST /api/integrate HTTP/1.1" 200 OK

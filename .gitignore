@@ -1,0 +1,15 @@
+.DS_Store
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Local virtual environments
+.venv/
+backend/.venv/
+
+# Runtime outputs
+backend/data/runs/
+
+# Editor / OS noise
+.pytest_cache/

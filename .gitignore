@@ -10,6 +10,7 @@ backend/.venv/
 
 # Runtime outputs
 backend/data/runs/
+*.log
 
 # Editor / OS noise
 .pytest_cache/

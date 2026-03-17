@@ -75,9 +75,55 @@ def _style_axes(ax: Any, xlabel: str, ylabel: str) -> None:
     ax.grid(False)
 
 
-def _save_fit_overlay_figure(target_path: Path, series: list[dict[str, Any]]) -> None:
+def _coerce_axis_range(values: Any) -> tuple[float, float] | None:
+    if not isinstance(values, (list, tuple)) or len(values) != 2:
+        return None
+    try:
+        lo = float(values[0])
+        hi = float(values[1])
+    except Exception:
+        return None
+    if not (math.isfinite(lo) and math.isfinite(hi)):
+        return None
+    return (lo, hi) if lo <= hi else (hi, lo)
+
+
+def _coerce_label_offset(values: Any) -> tuple[float, float]:
+    if not isinstance(values, (list, tuple)) or len(values) != 2:
+        return 0.0, 0.0
+    try:
+        dx = float(values[0]) / 100.0
+        dy = float(values[1]) / 100.0
+    except Exception:
+        return 0.0, 0.0
+    return dx, dy
+
+
+def _add_curve_labels(ax: Any, default_loc: str, offset_values: Any) -> None:
+    dx, dy = _coerce_label_offset(offset_values)
+    anchor_map = {
+        "upper right": (1.0, 1.0),
+        "lower right": (1.0, 0.0),
+        "upper left": (0.0, 1.0),
+        "lower left": (0.0, 0.0),
+    }
+    base_x, base_y = anchor_map.get(default_loc, (1.0, 1.0))
+    ax.legend(
+        loc=default_loc,
+        bbox_to_anchor=(base_x + dx, base_y - dy),
+        frameon=False,
+        fontsize=9,
+        handlelength=1.5,
+        labelspacing=0.3,
+        borderaxespad=0.0,
+        prop={"family": "Arial"},
+    )
+
+
+def _save_fit_overlay_figure(target_path: Path, series: list[dict[str, Any]], figure_settings: dict[str, Any] | None = None) -> None:
     plt = _get_matplotlib()
     fig, ax = plt.subplots(figsize=(10 / 2.54, 8 / 2.54), dpi=300, facecolor="white")
+    figure_settings = figure_settings or {}
 
     for item in series:
         color = str(item["color"])
@@ -89,23 +135,28 @@ def _save_fit_overlay_figure(target_path: Path, series: list[dict[str, Any]]) ->
         ax.plot(x_full, y_full, color=color, linewidth=1.3, label=label)
         ax.plot(x_fit, y_fit, color=color, linewidth=1.3, linestyle="--")
 
-    _style_axes(ax, "Time / Potential", "Peak Area")
-    ax.legend(
-        loc="upper left",
-        frameon=False,
-        fontsize=9,
-        handlelength=1.5,
-        labelspacing=0.3,
-        prop={"family": "Arial"},
+    _style_axes(
+        ax,
+        str(figure_settings.get("xlabel") or "Time / Potential"),
+        str(figure_settings.get("ylabel") or "Peak Area"),
     )
+    xlim = _coerce_axis_range(figure_settings.get("xlim"))
+    ylim = _coerce_axis_range(figure_settings.get("ylim"))
+    if xlim:
+        ax.set_xlim(*xlim)
+    if ylim:
+        ax.set_ylim(*ylim)
+    if figure_settings.get("show_labels", True):
+        _add_curve_labels(ax, "upper right", figure_settings.get("label_offset"))
     fig.subplots_adjust(left=0.18, right=0.93, bottom=0.15, top=0.90)
     fig.savefig(target_path, dpi=300, bbox_inches=None, pad_inches=0.1, facecolor=fig.get_facecolor(), transparent=False)
     plt.close(fig)
 
 
-def _save_fit_normalized_figure(target_path: Path, series: list[dict[str, Any]]) -> None:
+def _save_fit_normalized_figure(target_path: Path, series: list[dict[str, Any]], figure_settings: dict[str, Any] | None = None) -> None:
     plt = _get_matplotlib()
     fig, ax = plt.subplots(figsize=(10 / 2.54, 8 / 2.54), dpi=300, facecolor="white")
+    figure_settings = figure_settings or {}
 
     for item in series:
         color = str(item["color"])
@@ -125,15 +176,19 @@ def _save_fit_normalized_figure(target_path: Path, series: list[dict[str, Any]])
         )
         ax.plot(x_fit, y_fit, color=color, linewidth=1.3)
 
-    _style_axes(ax, "Time / Potential", "Normalized Peak Area")
-    ax.legend(
-        loc="upper left",
-        frameon=False,
-        fontsize=9,
-        handlelength=1.5,
-        labelspacing=0.3,
-        prop={"family": "Arial"},
+    _style_axes(
+        ax,
+        str(figure_settings.get("xlabel") or "Time / Potential"),
+        str(figure_settings.get("ylabel") or "Normalized Peak Area"),
     )
+    xlim = _coerce_axis_range(figure_settings.get("xlim"))
+    ylim = _coerce_axis_range(figure_settings.get("ylim"))
+    if xlim:
+        ax.set_xlim(*xlim)
+    if ylim:
+        ax.set_ylim(*ylim)
+    if figure_settings.get("show_labels", True):
+        _add_curve_labels(ax, "lower right", figure_settings.get("label_offset"))
     fig.subplots_adjust(left=0.18, right=0.93, bottom=0.15, top=0.90)
     fig.savefig(target_path, dpi=300, bbox_inches=None, pad_inches=0.1, facecolor=fig.get_facecolor(), transparent=False)
     plt.close(fig)
@@ -438,6 +493,7 @@ async def fit_kinetics(payload: dict[str, Any]) -> dict[str, Any]:
 async def render_fit_figures(payload: dict[str, Any]) -> dict[str, Any]:
     run_id = str(payload.get("run_id", "")).strip()
     series = list(payload.get("series", []))
+    figure_settings = payload.get("figure_settings", {})
     if not run_id:
         raise HTTPException(status_code=400, detail="run_id is required")
     if not series:
@@ -474,8 +530,10 @@ async def render_fit_figures(payload: dict[str, Any]) -> dict[str, Any]:
     normalized_path = run_dir / "fit_normalized.png"
 
     try:
-        _save_fit_overlay_figure(overlay_path, overlay_series)
-        _save_fit_normalized_figure(normalized_path, normalized_series)
+        overlay_settings = figure_settings.get("overlay", {}) if isinstance(figure_settings, dict) else {}
+        normalized_settings = figure_settings.get("normalized", {}) if isinstance(figure_settings, dict) else {}
+        _save_fit_overlay_figure(overlay_path, overlay_series, overlay_settings)
+        _save_fit_normalized_figure(normalized_path, normalized_series, normalized_settings)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to render fit figures: {e}") from e
 

@@ -133,7 +133,19 @@ const fitResults = {};
 const fitFigureUrls = { overlay: '', normalized: '' };
 let runRecordSaveQueue = Promise.resolve();
 let suppressKineticsRelayout = false;
-const filePalette = ['#1f77b4', '#d62728', '#2ca02c', '#9467bd', '#ff7f0e', '#17becf', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22'];
+const colorScales = {
+    None: ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf'],
+    viridis: ['#440154', '#3b528b', '#21908d', '#5dc863', '#fde725'],
+    magma: ['#000004', '#51127c', '#b73779', '#fc8961', '#fcfdbf'],
+    plasma: ['#0d0887', '#7e03a8', '#cc4778', '#f89540', '#f0f921'],
+    inferno: ['#000004', '#420a68', '#932667', '#dd513a', '#fdea45'],
+    cividis: ['#00224e', '#434e6c', '#7d7c78', '#bcae6c', '#fee838'],
+    Greys: ['#111111', '#444444', '#777777', '#aaaaaa', '#dddddd'],
+    RdBu: ['#67001f', '#d6604d', '#f7f7f7', '#4393c3', '#053061'],
+    RdBu_r: ['#053061', '#4393c3', '#f7f7f7', '#d6604d', '#67001f'],
+    Spectral: ['#9e0142', '#f46d43', '#fdae61', '#abdda4', '#3288bd', '#5e4fa2'],
+    coolwarm: ['#3b4cc0', '#8db0fe', '#f7f7f7', '#f4987a', '#b40426'],
+};
 const keepRecordCheckbox = document.getElementById('keepRecordCheckbox');
 const waterfallGap = document.getElementById('waterfallGap');
 const waterfallMaxLines = document.getElementById('waterfallMaxLines');
@@ -145,6 +157,20 @@ const intEnd = document.getElementById('intEnd');
 const baselineMode = document.getElementById('baselineMode');
 const integrateBtn = document.getElementById('integrateBtn');
 const fittingSubsections = document.getElementById('fitting-subsections');
+const fitColorScheme = document.getElementById('fitColorScheme');
+const fitColorSchemePreview = document.getElementById('fitColorSchemePreview');
+const overlayXAxisTitle = document.getElementById('overlayXAxisTitle');
+const overlayYAxisTitle = document.getElementById('overlayYAxisTitle');
+const overlayXRange = document.getElementById('overlayXRange');
+const overlayYRange = document.getElementById('overlayYRange');
+const overlayShowLabels = document.getElementById('overlayShowLabels');
+const overlayLabelOffset = document.getElementById('overlayLabelOffset');
+const normalizedXAxisTitle = document.getElementById('normalizedXAxisTitle');
+const normalizedYAxisTitle = document.getElementById('normalizedYAxisTitle');
+const normalizedXRange = document.getElementById('normalizedXRange');
+const normalizedYRange = document.getElementById('normalizedYRange');
+const normalizedShowLabels = document.getElementById('normalizedShowLabels');
+const normalizedLabelOffset = document.getElementById('normalizedLabelOffset');
 const runFitsBtn = document.getElementById('runFitsBtn');
 const fitSummaryMsg = document.getElementById('fitSummaryMsg');
 const fitStatusBadge = document.getElementById('fitStatusBadge');
@@ -199,9 +225,69 @@ function clearObject(obj) {
     });
 }
 
+function hexToRgb(hex) {
+    const value = String(hex || '').replace('#', '').trim();
+    const normalized = value.length === 3
+        ? value.split('').map((char) => char + char).join('')
+        : value;
+    const intValue = Number.parseInt(normalized, 16);
+    if (!Number.isFinite(intValue)) {
+        return { r: 0, g: 0, b: 0 };
+    }
+    return {
+        r: (intValue >> 16) & 255,
+        g: (intValue >> 8) & 255,
+        b: intValue & 255,
+    };
+}
+
+function rgbToHex({ r, g, b }) {
+    const clamp = (value) => Math.max(0, Math.min(255, Math.round(value)));
+    return `#${[clamp(r), clamp(g), clamp(b)].map((value) => value.toString(16).padStart(2, '0')).join('')}`;
+}
+
+function interpolateColor(startHex, endHex, t) {
+    const start = hexToRgb(startHex);
+    const end = hexToRgb(endHex);
+    return rgbToHex({
+        r: start.r + (end.r - start.r) * t,
+        g: start.g + (end.g - start.g) * t,
+        b: start.b + (end.b - start.b) * t,
+    });
+}
+
+function sampleColors(scaleName, count) {
+    const anchors = colorScales[scaleName] || colorScales.None;
+    if (count <= 1) return [anchors[0]];
+    if (scaleName === 'None') return anchors.slice(0, count);
+
+    const output = [];
+    const segments = anchors.length - 1;
+    for (let i = 0; i < count; i += 1) {
+        const pos = (i / Math.max(1, count - 1)) * segments;
+        const left = Math.min(segments - 1, Math.floor(pos));
+        const localT = pos - left;
+        output.push(interpolateColor(anchors[left], anchors[left + 1], localT));
+    }
+    return output;
+}
+
+function updateColorSchemePreview() {
+    if (!fitColorSchemePreview) return;
+    const previewColors = sampleColors(fitColorScheme?.value || 'None', 8);
+    fitColorSchemePreview.innerHTML = previewColors.map((color) => `
+        <span style="flex: 1 1 0; height: 14px; border-radius: 999px; background: ${color}; border: 1px solid rgba(255,255,255,0.16);"></span>
+    `).join('');
+}
+
+function getCurrentPalette() {
+    return sampleColors(fitColorScheme?.value || 'None', Math.max(extractedFilenames.length, 10));
+}
+
 function getFileColor(filename) {
     const idx = Math.max(0, extractedFilenames.indexOf(filename));
-    return filePalette[idx % filePalette.length];
+    const palette = getCurrentPalette();
+    return palette[idx % palette.length];
 }
 
 function getDisplayName(filename) {
@@ -215,6 +301,44 @@ function formatNumber(value, digits = 4) {
 
 function isKeepRecordEnabled() {
     return Boolean(keepRecordCheckbox?.checked);
+}
+
+function parseRangeInput(value) {
+    const text = String(value || '').trim();
+    if (!text) return null;
+    const parts = text.split(',').map((item) => Number(item.trim()));
+    if (parts.length !== 2 || parts.some((item) => !Number.isFinite(item))) return null;
+    return parts[0] <= parts[1] ? parts : [parts[1], parts[0]];
+}
+
+function parseOffsetInput(value) {
+    const text = String(value || '').trim();
+    if (!text) return [0, 0];
+    const parts = text.split(',').map((item) => Number(item.trim()));
+    if (parts.length !== 2 || parts.some((item) => !Number.isFinite(item))) return [0, 0];
+    return parts;
+}
+
+function buildFigureRenderSettings() {
+    return {
+        color_scheme: fitColorScheme.value,
+        overlay: {
+            xlabel: overlayXAxisTitle.value.trim() || 'Time / Potential',
+            ylabel: overlayYAxisTitle.value.trim() || 'Peak Area',
+            xlim: parseRangeInput(overlayXRange.value),
+            ylim: parseRangeInput(overlayYRange.value),
+            show_labels: overlayShowLabels.checked,
+            label_offset: parseOffsetInput(overlayLabelOffset.value),
+        },
+        normalized: {
+            xlabel: normalizedXAxisTitle.value.trim() || 'Time / Potential',
+            ylabel: normalizedYAxisTitle.value.trim() || 'Normalized Peak Area',
+            xlim: parseRangeInput(normalizedXRange.value),
+            ylim: parseRangeInput(normalizedYRange.value),
+            show_labels: normalizedShowLabels.checked,
+            label_offset: parseOffsetInput(normalizedLabelOffset.value),
+        },
+    };
 }
 
 function buildRunRecordSnapshot() {
@@ -260,6 +384,7 @@ function buildRunRecordSnapshot() {
                 gap: Number(waterfallGap.value),
                 max_lines: Number(waterfallMaxLines.value),
             },
+            figure_render: buildFigureRenderSettings(),
             fit_ranges: Object.fromEntries(
                 extractedFilenames
                     .filter((filename) => fitRanges[filename])
@@ -322,6 +447,58 @@ function clearFitImages(message = 'Run fitting to generate result images.') {
     fitFigureUrls.normalized = '';
     setFitImage(fitOverlayImage, fitOverlayPlaceholder, '', message);
     setFitImage(fitNormalizedImage, fitNormalizedPlaceholder, '', message);
+}
+
+function buildSuccessfulSeriesPayload() {
+    return extractedFilenames
+        .filter((filename) => fitResults[filename] && !fitResults[filename].error)
+        .map((filename) => {
+            const result = fitResults[filename];
+            return {
+                label: getDisplayName(filename),
+                color: getFileColor(filename),
+                full_time: result.full_time,
+                full_areas: result.full_areas,
+                x_fit: result.x_sorted,
+                y_fit: result.y_fit,
+                x_raw: result.x_selected,
+                y_raw: result.y_selected_norm,
+                y_fit_norm: result.y_fit_norm,
+            };
+        });
+}
+
+async function renderFitFiguresFromCurrentResults(statusMessage = 'Refreshing fit figures…') {
+    if (!currentRunId) return '';
+    const successfulSeriesPayload = buildSuccessfulSeriesPayload();
+    if (successfulSeriesPayload.length === 0) {
+        fitFigureUrls.overlay = '';
+        fitFigureUrls.normalized = '';
+        return '';
+    }
+
+    fitSummaryMsg.textContent = statusMessage;
+
+    try {
+        const figureResp = await fetch('/api/render-fit-figures', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                run_id: currentRunId,
+                series: successfulSeriesPayload,
+                figure_settings: buildFigureRenderSettings(),
+            }),
+        });
+        const figureBody = await figureResp.json();
+        if (!figureResp.ok) throw new Error(figureBody.detail || 'Failed to render fit figures');
+        fitFigureUrls.overlay = figureBody.overlay_url;
+        fitFigureUrls.normalized = figureBody.normalized_url;
+        return '';
+    } catch (error) {
+        fitFigureUrls.overlay = '';
+        fitFigureUrls.normalized = '';
+        return error.message || 'Unknown render error';
+    }
 }
 
 function renderFitOutputs() {
@@ -410,6 +587,19 @@ function invalidateFitResultsOnly(message = 'Fit ranges changed. Run fitting aga
 function invalidateDerivedState() {
     clearObject(integrationCache);
     invalidateFitResultsOnly('Integration settings changed. Run fitting again to refresh the right-hand results.');
+}
+
+async function refreshFitFiguresForStyleChange() {
+    renderFitOutputs();
+    queueRunRecordSave();
+
+    if (!buildSuccessfulSeriesPayload().length) return;
+
+    const figureRenderError = await renderFitFiguresFromCurrentResults('Refreshing fit figures…');
+    renderFitOutputs();
+    fitSummaryMsg.textContent = figureRenderError
+        ? `Figure refresh failed: ${figureRenderError}`
+        : 'Updated figure settings applied to the right-hand images.';
 }
 
 async function fetchDataset(filename) {
@@ -1139,44 +1329,7 @@ runFitsBtn.addEventListener('click', async () => {
         }
     }
 
-    const successfulSeriesPayload = extractedFilenames
-        .filter((filename) => fitResults[filename] && !fitResults[filename].error)
-        .map((filename) => {
-            const result = fitResults[filename];
-            return {
-                label: getDisplayName(filename),
-                color: getFileColor(filename),
-                full_time: result.full_time,
-                full_areas: result.full_areas,
-                x_fit: result.x_sorted,
-                y_fit: result.y_fit,
-                x_raw: result.x_selected,
-                y_raw: result.y_selected_norm,
-                y_fit_norm: result.y_fit_norm,
-            };
-        });
-
-    let figureRenderError = '';
-    if (successfulSeriesPayload.length > 0) {
-        try {
-            const figureResp = await fetch('/api/render-fit-figures', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    run_id: currentRunId,
-                    series: successfulSeriesPayload,
-                }),
-            });
-            const figureBody = await figureResp.json();
-            if (!figureResp.ok) throw new Error(figureBody.detail || 'Failed to render fit figures');
-            fitFigureUrls.overlay = figureBody.overlay_url;
-            fitFigureUrls.normalized = figureBody.normalized_url;
-        } catch (error) {
-            fitFigureUrls.overlay = '';
-            fitFigureUrls.normalized = '';
-            figureRenderError = error.message || 'Unknown render error';
-        }
-    }
+    const figureRenderError = await renderFitFiguresFromCurrentResults(`Rendering fit figures for ${successCount} file(s)…`);
 
     fitSummaryMsg.textContent = figureRenderError
         ? `Fits completed, but figure rendering failed: ${figureRenderError}`
@@ -1191,6 +1344,29 @@ runFitsBtn.addEventListener('click', async () => {
 keepRecordCheckbox.addEventListener('change', () => {
     currentKeepRecord = isKeepRecordEnabled();
     queueRunRecordSave();
+});
+
+[
+    fitColorScheme,
+    overlayXAxisTitle,
+    overlayYAxisTitle,
+    overlayXRange,
+    overlayYRange,
+    overlayShowLabels,
+    overlayLabelOffset,
+    normalizedXAxisTitle,
+    normalizedYAxisTitle,
+    normalizedXRange,
+    normalizedYRange,
+    normalizedShowLabels,
+    normalizedLabelOffset,
+].forEach((control) => {
+    control.addEventListener('change', () => {
+        if (control === fitColorScheme) {
+            updateColorSchemePreview();
+        }
+        refreshFitFiguresForStyleChange();
+    });
 });
 
 window.addEventListener('beforeunload', () => {
@@ -1241,4 +1417,5 @@ document.querySelectorAll('.section-header').forEach(header => {
 });
 
 currentKeepRecord = isKeepRecordEnabled();
+updateColorSchemePreview();
 renderFitOutputs();

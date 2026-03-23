@@ -121,12 +121,12 @@ applyFolderBtn.addEventListener("click", async () => {
 
 let currentRunId = null;
 let currentDataset = null;
-let currentKineticsDataset = null;
 let currentKineticsFilename = null;
 let currentKeepRecord = false;
 let extractedFilenames = [];
 const fitRanges = {}; // filename -> { start, end }
 const kineticsTimeAxes = {}; // filename -> actual x values present on the kinetics chart
+const waterfallTimeRanges = {}; // filename -> { start, end }
 const datasetCache = {};
 const integrationCache = {};
 const fitResults = {};
@@ -149,6 +149,8 @@ const colorScales = {
 const keepRecordCheckbox = document.getElementById('keepRecordCheckbox');
 const waterfallGap = document.getElementById('waterfallGap');
 const waterfallMaxLines = document.getElementById('waterfallMaxLines');
+const waterfallTimeRange = document.getElementById('waterfallTimeRange');
+const waterfallColorScheme = document.getElementById('waterfallColorScheme');
 const fileRadioGroup = document.getElementById('fileRadioGroup');
 const kineticsRadioGroup = document.getElementById('kineticsRadioGroup');
 const vizStatusMsg = document.getElementById('vizStatusMsg');
@@ -191,8 +193,7 @@ function sampleIndices(total, maxN) {
     return idx;
 }
 
-function getNearestTimeValue(filename, rawValue) {
-    const axis = kineticsTimeAxes[filename];
+function getNearestValueFromAxis(axis, rawValue) {
     if (!Array.isArray(axis) || axis.length === 0 || !Number.isFinite(rawValue)) {
         return rawValue;
     }
@@ -208,6 +209,11 @@ function getNearestTimeValue(filename, rawValue) {
         }
     }
     return nearest;
+}
+
+function getNearestTimeValue(filename, rawValue) {
+    const axis = kineticsTimeAxes[filename];
+    return getNearestValueFromAxis(axis, rawValue);
 }
 
 function getSnappedFitRange(filename, startValue, endValue) {
@@ -281,7 +287,7 @@ function updateColorSchemePreview() {
 }
 
 function getCurrentPalette() {
-    return sampleColors(fitColorScheme?.value || 'None', Math.max(extractedFilenames.length, 10));
+    return sampleColors(fitColorScheme?.value || 'None', Math.max(extractedFilenames.length, 1));
 }
 
 function getFileColor(filename) {
@@ -317,6 +323,44 @@ function parseOffsetInput(value) {
     const parts = text.split(',').map((item) => Number(item.trim()));
     if (parts.length !== 2 || parts.some((item) => !Number.isFinite(item))) return [0, 0];
     return parts;
+}
+
+function formatRangeInput(start, end) {
+    return `${formatNumber(start, 4)},${formatNumber(end, 4)}`;
+}
+
+function getSortedTimeAxis(data) {
+    if (!data?.time?.length) return [];
+    return Array.from(new Set(data.time.slice().sort((a, b) => a - b)));
+}
+
+function getSnappedWaterfallRange(filename, axis, startValue, endValue) {
+    const snappedStart = getNearestValueFromAxis(axis, startValue);
+    const snappedEnd = getNearestValueFromAxis(axis, endValue);
+    const range = {
+        start: Math.min(snappedStart, snappedEnd),
+        end: Math.max(snappedStart, snappedEnd),
+    };
+    waterfallTimeRanges[filename] = range;
+    return range;
+}
+
+function resolveWaterfallRange(data) {
+    const axis = getSortedTimeAxis(data);
+    if (!axis.length) return null;
+
+    const filename = data.filename;
+    const stored = waterfallTimeRanges[filename];
+    const parsed = parseRangeInput(waterfallTimeRange.value);
+    const source = parsed || stored || [axis[0], axis[axis.length - 1]];
+
+    return getSnappedWaterfallRange(filename, axis, source[0], source[1]);
+}
+
+function syncWaterfallTimeRangeInput(filename, range) {
+    if (!waterfallTimeRange || !range) return;
+    waterfallTimeRanges[filename] = range;
+    waterfallTimeRange.value = formatRangeInput(range.start, range.end);
 }
 
 function buildFigureRenderSettings() {
@@ -383,6 +427,10 @@ function buildRunRecordSnapshot() {
             waterfall: {
                 gap: Number(waterfallGap.value),
                 max_lines: Number(waterfallMaxLines.value),
+                time_range: currentDataset?.filename && waterfallTimeRanges[currentDataset.filename]
+                    ? waterfallTimeRanges[currentDataset.filename]
+                    : null,
+                color_scheme: waterfallColorScheme.value,
             },
             figure_render: buildFigureRenderSettings(),
             fit_ranges: Object.fromEntries(
@@ -617,14 +665,12 @@ async function fetchDataset(filename) {
 
 async function integrateDatasetForFile(filename) {
     if (integrationCache[filename]) return integrationCache[filename];
-    const ds = await fetchDataset(filename);
     const resp = await fetch('/api/integrate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            wavenumbers: ds.wavenumbers,
-            time: ds.time,
-            spectra: ds.spectra,
+            run_id: currentRunId,
+            filename,
             start: Number(intStart.value),
             end: Number(intEnd.value),
             baseline_mode: baselineMode.value,
@@ -685,25 +731,37 @@ function normalizeSeriesPair(yRaw, yFit) {
 function renderSpectra(data) {
     const totalFrames = data.spectra.length;
     const order = Array.from({ length: totalFrames }, (_, i) => i).sort((a, b) => data.time[a] - data.time[b]);
-    const maxN = Math.max(1, Math.min(Number(waterfallMaxLines.value) || 15, totalFrames));
-    const frameIdx = sampleIndices(order.length, maxN).map(k => order[k]);
+    const resolvedRange = resolveWaterfallRange(data);
+    const filteredOrder = resolvedRange
+        ? order.filter((idx) => data.time[idx] >= resolvedRange.start && data.time[idx] <= resolvedRange.end)
+        : order;
+    const safeOrder = filteredOrder.length ? filteredOrder : order;
+    const maxN = Math.max(1, Math.min(Number(waterfallMaxLines.value) || 15, safeOrder.length));
+    const frameIdx = sampleIndices(safeOrder.length, maxN).map((k) => safeOrder[k]);
     const gap = Number(waterfallGap.value) || 0;
+    const visibleRange = {
+        start: Math.min(...frameIdx.map((idx) => data.time[idx])),
+        end: Math.max(...frameIdx.map((idx) => data.time[idx])),
+    };
+    syncWaterfallTimeRangeInput(data.filename, visibleRange);
+
+    const waterfallColors = sampleColors(waterfallColorScheme.value || 'None', Math.max(frameIdx.length, 1));
     const traces = frameIdx.map((i, stackIdx) => ({
         x: data.wavenumbers,
         y: data.spectra[i].map(v => v + stackIdx * gap),
         mode: 'lines',
-        line: { width: 1.1 },
+        line: { width: 1.1, color: waterfallColors[stackIdx % waterfallColors.length] },
         name: `t=${data.time[i].toFixed(4)}`,
     }));
 
     const s0 = Number(intStart.value) || 0;
     const s1 = Number(intEnd.value) || 0;
 
-    Plotly.newPlot(
+    Plotly.react(
         'spectraPlot',
         traces,
         {
-            title: { text: `SRS Waterfall — ${data.filename} (Gap=${gap.toPrecision(4)})`, font: { color: '#eeeeee' } },
+            title: { text: `SRS Waterfall — ${data.filename} (Gap=${gap.toPrecision(4)}, Time=${formatRangeInput(visibleRange.start, visibleRange.end)})`, font: { color: '#eeeeee' } },
             xaxis: { title: 'Wavenumber (cm⁻¹)', gridcolor: '#333', zerolinecolor: '#444', tickfont: { color: '#ccc' }, titlefont: { color: '#ccc' } },
             yaxis: { title: 'Intensity + Offset', gridcolor: '#333', zerolinecolor: '#444', tickfont: { color: '#ccc' }, titlefont: { color: '#ccc' } },
             margin: { l: 60, r: 20, t: 52, b: 50 },
@@ -726,6 +784,7 @@ function renderSpectra(data) {
         }
     ).then(() => {
         const plotDiv = document.getElementById('spectraPlot');
+        if (plotDiv.removeAllListeners) plotDiv.removeAllListeners('plotly_relayout');
         plotDiv.on('plotly_relayout', (eventData) => {
             let changed = false;
             let newStart = Number(intStart.value);
@@ -985,9 +1044,9 @@ extractAllBtn.addEventListener('click', async () => {
         clearObject(integrationCache);
         clearObject(fitRanges);
         clearObject(kineticsTimeAxes);
+        clearObject(waterfallTimeRanges);
         clearObject(fitResults);
         currentDataset = null;
-        currentKineticsDataset = null;
         currentKineticsFilename = null;
         runFitsBtn.disabled = body.succeeded.length === 0;
         fitSummaryMsg.textContent = 'Set fit ranges in Step 3, then run fitting for all selected files.';
@@ -1027,6 +1086,20 @@ waterfallMaxLines.addEventListener('change', () => {
     queueRunRecordSave();
 });
 
+waterfallTimeRange.addEventListener('change', () => {
+    const checked = fileRadioGroup.querySelector('input[name="fileRadio"]:checked');
+    if (!checked || !currentDataset) return;
+    loadAndRenderFile(checked.value);
+    queueRunRecordSave();
+});
+
+waterfallColorScheme.addEventListener('change', () => {
+    const checked = fileRadioGroup.querySelector('input[name="fileRadio"]:checked');
+    if (!checked || !currentDataset) return;
+    loadAndRenderFile(checked.value);
+    queueRunRecordSave();
+});
+
 // Integrate button: manual trigger
 integrateBtn.addEventListener('click', async () => {
     invalidateDerivedState();
@@ -1053,8 +1126,6 @@ async function loadKineticsDataset(filename) {
     if (!currentRunId) return;
     currentKineticsFilename = filename;
     try {
-        const body = await fetchDataset(filename);
-        currentKineticsDataset = body;
         await updateIntegration();
     } catch (e) {
         console.warn('Kinetics dataset load error:', e.message);
@@ -1124,7 +1195,7 @@ async function selectKineticsFile(filename) {
     });
 
     if (!targetRadio) return;
-    if (currentKineticsFilename === filename && currentKineticsDataset) return;
+    if (currentKineticsFilename === filename && integrationCache[filename]) return;
     await loadKineticsDataset(filename);
 }
 

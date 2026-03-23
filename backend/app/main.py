@@ -214,6 +214,22 @@ def _parse_timeseries_txt(path: Path) -> dict[str, Any]:
     }
 
 
+def _load_run_dataset(run_id: str, filename: str) -> dict[str, Any]:
+    run_dir = RUNS_DIR / run_id
+    if not run_dir.is_dir():
+        raise HTTPException(status_code=404, detail="run_id not found")
+
+    stem = Path(filename).stem
+    ts_path = run_dir / f"{stem}.txt"
+    if not ts_path.exists():
+        raise HTTPException(status_code=404, detail=f"Extracted file not found: {stem}.txt")
+
+    try:
+        return _parse_timeseries_txt(ts_path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to parse dataset: {e}") from e
+
+
 def _prune_temp_runs(max_keep: int = 5) -> None:
     temp_dirs = [p for p in RUNS_DIR.glob("*") if p.is_dir() and (p / ".temp").exists()]
     temp_dirs.sort(key=lambda p: p.stat().st_mtime, reverse=True)
@@ -367,20 +383,7 @@ async def get_dataset(payload: dict[str, Any]) -> dict[str, Any]:
     if not run_id or not filename:
         raise HTTPException(status_code=400, detail="run_id and filename are required")
 
-    run_dir = RUNS_DIR / run_id
-    if not run_dir.is_dir():
-        raise HTTPException(status_code=404, detail="run_id not found")
-
-    stem = Path(filename).stem
-    ts_path = run_dir / f"{stem}.txt"
-    if not ts_path.exists():
-        raise HTTPException(status_code=404, detail=f"Extracted file not found: {stem}.txt")
-
-    try:
-        parsed = _parse_timeseries_txt(ts_path)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to parse dataset: {e}")
-
+    parsed = _load_run_dataset(run_id, filename)
     return {"filename": filename, **parsed}
 
 
@@ -400,15 +403,32 @@ async def integrate(payload: dict[str, Any]) -> dict[str, Any]:
         end: upper wavenumber bound
         baseline_mode: 'none' or 'linear'
     """
+    baseline_mode = str(payload.get("baseline_mode", "none"))
     try:
-        wn = np.asarray(payload["wavenumbers"], dtype=float)
-        time_axis = np.asarray(payload["time"], dtype=float)
-        spectra = np.asarray(payload["spectra"], dtype=float)
         start = float(payload["start"])
         end = float(payload["end"])
-        baseline_mode = str(payload.get("baseline_mode", "none"))
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Invalid payload: {e}")
+        raise HTTPException(status_code=400, detail=f"Invalid integration window: {e}") from e
+
+    if "wavenumbers" in payload and "time" in payload and "spectra" in payload:
+        try:
+            wn = np.asarray(payload["wavenumbers"], dtype=float)
+            time_axis = np.asarray(payload["time"], dtype=float)
+            spectra = np.asarray(payload["spectra"], dtype=float)
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid payload: {e}") from e
+    else:
+        run_id = str(payload.get("run_id", "")).strip()
+        filename = str(payload.get("filename", "")).strip()
+        if not run_id or not filename:
+            raise HTTPException(
+                status_code=400,
+                detail="Provide either dataset arrays or run_id + filename for integration",
+            )
+        parsed = _load_run_dataset(run_id, filename)
+        wn = np.asarray(parsed["wavenumbers"], dtype=float)
+        time_axis = np.asarray(parsed["time"], dtype=float)
+        spectra = np.asarray(parsed["spectra"], dtype=float)
 
     if spectra.ndim != 2 or spectra.shape[0] != time_axis.size or spectra.shape[1] != wn.size:
         raise HTTPException(status_code=400, detail="spectra/time/wavenumber shape mismatch")
